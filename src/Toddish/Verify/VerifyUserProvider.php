@@ -140,8 +140,45 @@ class VerifyUserProvider implements UserProviderInterface
     public function createModel()
     {
         $class = '\\'.ltrim($this->model, '\\');
+        $object = new $class;
 
-        return new $class;
+        if ( is_a( $object, '\Illuminate\Support\Facades\Facade' ) )
+        {
+            $object = $object->getFacadeRoot();
+        }
+
+        return $object;
+    }
+
+    /**
+     * Retrieve a user by by their unique identifier and "remember me" token.
+     *
+     * @param  mixed  $identifier
+     * @param  string  $token
+     * @return \Illuminate\Auth\UserInterface|null
+     */
+    public function retrieveByToken($identifier, $token)
+    {
+        $model = $this->createModel();
+
+        return $model->newQuery()
+                        ->where($model->getKeyName(), $identifier)
+                        ->where($model->getRememberTokenName(), $token)
+                        ->first();
+    }
+
+    /**
+     * Update the "remember me" token for the given user in storage.
+     *
+     * @param  \Illuminate\Auth\UserInterface  $user
+     * @param  string  $token
+     * @return void
+     */
+    public function updateRememberToken(UserInterface $user, $token)
+    {
+        $user->setRememberToken($token);
+
+        $user->save();
     }
 }
 
